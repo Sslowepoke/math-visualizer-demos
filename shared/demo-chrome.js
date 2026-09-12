@@ -13,6 +13,11 @@ export function createDemoTitle(text) {
 }
 
 export function bindViewControls(camera, controls) {
+  const defaultUp = {
+    x: camera.up.x,
+    y: camera.up.y,
+    z: camera.up.z,
+  };
   controls.saveState();
 
   const defaultDistance = Math.hypot(
@@ -20,6 +25,14 @@ export function bindViewControls(camera, controls) {
     camera.position.y - controls.target.y,
     camera.position.z - controls.target.z,
   );
+
+  function restoreDefault() {
+    // OrbitControls.reset() restores position/target/zoom, but not camera.up.
+    camera.up.set(defaultUp.x, defaultUp.y, defaultUp.z);
+    controls.reset();
+    camera.up.set(defaultUp.x, defaultUp.y, defaultUp.z);
+    controls.update();
+  }
 
   function lookFrom(axis) {
     const distance = defaultDistance || 6;
@@ -45,7 +58,7 @@ export function bindViewControls(camera, controls) {
 
     if (event.code === "Space") {
       event.preventDefault();
-      controls.reset();
+      restoreDefault();
       return;
     }
 

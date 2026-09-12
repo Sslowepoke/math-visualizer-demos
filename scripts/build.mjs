@@ -2,7 +2,9 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path";
 import { execSync } from "node:child_process";
 
-const demos = ["elektricno-polje-kocka", "complex-vector-visualiser"];
+const demos = JSON.parse(readFileSync("demos.json", "utf8")).map(
+  (demo) => demo.slug,
+);
 
 const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1] ?? "";
 const siteBase = repoName ? `/${repoName}` : "";

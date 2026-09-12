@@ -60,7 +60,10 @@ Each demo lives at a subpath, e.g. `https://<username>.github.io/math-visualizer
 
 ## Adding a new demo
 
-1. Create a new folder with its own `package.json` and Vite config (`base: process.env.VITE_BASE_PATH ?? "/"`).
-2. Add the folder to `workspaces` in root `package.json`.
-3. Add a `dev:<name>` script in root `package.json`.
-4. Add the slug to `scripts/build.mjs` and an entry in `demos.json`.
+```bash
+python scripts/new_demo.py my-demo-slug --title "My Demo" --description "What it shows."
+npm install
+npm run dev:my-demo-slug
+```
+
+The script copies `templates/demo/`, then registers the slug in `package.json`, `demos.json`, and this README. The template already includes the theme toggle, title, z-up camera, axes/grid GUI, and `Space` / `X` / `Y` / `Z` / `G` keys.
