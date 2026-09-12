@@ -4,8 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Physics &amp; Math Demos</title>
+  <script>
+    (function () {
+      var theme = new URLSearchParams(location.search).get("theme");
+      if (theme !== "light" && theme !== "dark") {
+        try { theme = localStorage.getItem("math-demos-theme"); } catch (e) {}
+      }
+      if (theme !== "light" && theme !== "dark") {
+        theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      }
+      document.documentElement.setAttribute("data-theme", theme);
+      document.documentElement.style.colorScheme = theme;
+    })();
+  </script>
+  <link rel="stylesheet" href="shared/theme-toggle.css" />
   <style>
-    :root {
+    :root,
+    :root[data-theme="dark"] {
       color-scheme: dark;
       --bg: #232a2e;
       --fg: #d3c6aa;
@@ -13,6 +28,16 @@
       --accent: #a7c080;
       --card: #2c3337;
       --border: #3a4248;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #fdf6e3;
+      --fg: #5c6a72;
+      --muted: #8a9285;
+      --accent: #8da101;
+      --card: #f4f0d9;
+      --border: #e6e2cc;
     }
 
     * {
@@ -89,6 +114,7 @@
     <ul class="demo-list" id="demo-list"></ul>
   </main>
 
+  <script type="module" src="shared/theme-toggle.js"></script>
   <script>
     const siteBase = "__SITE_BASE__";
     const isPlaceholder = siteBase.startsWith("__");

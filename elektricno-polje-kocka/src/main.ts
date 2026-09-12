@@ -1,20 +1,16 @@
 import "./style.css";
+import "../../shared/theme-toggle.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CSS2DRenderer, CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import {
+    createThemeToggle,
+    getTheme,
+    hexColor,
+    palette,
+} from "../../shared/theme.js";
 
-const colors = {
-    background: 0x232A2E,
-    background_dim: 0x232A2E,
-    grey: 0x7A8478,
-    red: 0xE67E80,
-    yellow: 0xDBBC7F,
-    green: 0xA7C080,
-    blue: 0x7FBBB3,
-    purple: 0xD699B6,
-    fg: 0xD3C6AA,
-    statusline: 0xA7C080
-};
+createThemeToggle();
 
 const scene = new THREE.Scene();
 
@@ -22,7 +18,7 @@ const camera = new THREE.PerspectiveCamera(
     60,
     window.innerWidth / window.innerHeight,
     0.1,
-    1000
+    1000,
 );
 
 camera.position.set(4.5, 1.5, 2);
@@ -30,7 +26,6 @@ camera.up.set(0, 0, 1);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(colors.background);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
@@ -49,8 +44,30 @@ scene.add(light);
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
+function tintGrid(grid: THREE.GridHelper, color: number) {
+    const attr = grid.geometry.getAttribute("color");
+    if (!attr) return;
+
+    const c = new THREE.Color(color);
+    for (let i = 0; i < attr.count; i++) {
+        attr.setXYZ(i, c.r, c.g, c.b);
+    }
+    attr.needsUpdate = true;
+}
+
+function setLabelColor(label: CSS2DObject, color: number) {
+    const theme = getTheme();
+    label.element.style.color = hexColor(color);
+    label.element.style.textShadow =
+        theme === "light"
+            ? "0 0 4px rgba(253, 246, 227, 0.9)"
+            : "0 0 4px rgba(0, 0, 0, 0.8)";
+}
+
 /* ---------------- GRIDS ---------------- */
-// 
+
+const colors = palette();
+
 const gridXYBack = new THREE.GridHelper(2, 10, colors.grey, colors.grey);
 gridXYBack.position.set(1, 0, 1);
 scene.add(gridXYBack);
@@ -79,15 +96,15 @@ function makeLabel(
 ): CSS2DObject {
     const div = document.createElement("div");
     div.textContent = text;
-    div.style.color = "#" + color.toString(16).padStart(6, "0");
     div.style.fontSize = size;
     div.style.fontWeight = "bold";
     div.style.fontFamily = "Arial, sans-serif";
     div.style.userSelect = "none";
     div.style.pointerEvents = "none";
-    div.style.textShadow = "0 0 4px rgba(0, 0, 0, 0.8)";
 
-    return new CSS2DObject(div);
+    const label = new CSS2DObject(div);
+    setLabelColor(label, color);
+    return label;
 }
 
 const labelX = makeLabel("x", colors.red, "18px");
@@ -102,14 +119,10 @@ const labelZ = makeLabel("z", colors.blue, "18px");
 labelZ.position.set(0, 0, 2.4);
 scene.add(labelZ);
 
-
-
 /* ---------------- CUBE ---------------- */
-const a = 1
+const a = 1;
 
-const cubeGeometry = new THREE.BoxGeometry(
-	a,a,a
-);
+const cubeGeometry = new THREE.BoxGeometry(a, a, a);
 
 const cubeMaterial = new THREE.MeshBasicMaterial({
     transparent: true,
@@ -117,33 +130,20 @@ const cubeMaterial = new THREE.MeshBasicMaterial({
     side: THREE.DoubleSide,
 });
 
-const cube = new THREE.Mesh(
-	cubeGeometry,
-	cubeMaterial,
-);
-
-cube.position.set(
-	a/2, a/2, a/2
-);
-
+const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+cube.position.set(a / 2, a / 2, a / 2);
 scene.add(cube);
 
 /* ---------------- CUBE EDGES ---------------- */
 const edgesGeometry = new THREE.EdgesGeometry(cubeGeometry);
 
 const edgesMaterial = new THREE.LineBasicMaterial({
-    color: 0xffffff,
+    color: colors.edge,
 });
 
-const edges = new THREE.LineSegments(
-    edgesGeometry,
-    edgesMaterial
-);
-
+const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
 edges.position.copy(cube.position);
-
 scene.add(edges);
-
 
 /* ---------------- POINT ---------------- */
 
@@ -152,11 +152,12 @@ const LABEL_OFFSET = new THREE.Vector3(0.12, 0.12, 0.12);
 function createLabeledPoint(
     position: THREE.Vector3,
     label: string,
-    color = colors.purple,
+    colorKey: "red" | "green" | "blue" | "purple",
     radius = 0.03,
     labelOffset = LABEL_OFFSET,
 ): THREE.Group {
     const group = new THREE.Group();
+    const color = palette()[colorKey];
 
     const geometry = new THREE.SphereGeometry(radius, 32, 16);
     const material = new THREE.MeshBasicMaterial({ color });
@@ -168,6 +169,9 @@ function createLabeledPoint(
     group.add(labelObj);
 
     group.position.copy(position);
+    group.userData.colorKey = colorKey;
+    group.userData.pointMaterial = material;
+    group.userData.label = labelObj;
     scene.add(group);
 
     return group;
@@ -178,10 +182,12 @@ const B = new THREE.Vector3(0, a, 0);
 const C = new THREE.Vector3(0, 0, a);
 const M = new THREE.Vector3(a, a, a);
 
-createLabeledPoint(A, "A", colors.green);
-createLabeledPoint(B, "B", colors.blue);
-createLabeledPoint(C, "C", colors.red);
-createLabeledPoint(M, "M", colors.purple);
+const labeledPoints = [
+    createLabeledPoint(A, "A", "green"),
+    createLabeledPoint(B, "B", "blue"),
+    createLabeledPoint(C, "C", "red"),
+    createLabeledPoint(M, "M", "purple"),
+];
 
 /* ---------------- PLANE HIGHLIGHTS ---------------- */
 
@@ -192,7 +198,7 @@ function createGridPlaneTexture(color: number): THREE.CanvasTexture {
     canvas.height = resolution;
 
     const ctx = canvas.getContext("2d")!;
-    const hex = "#" + color.toString(16).padStart(6, "0");
+    const hex = hexColor(color);
     const r = (color >> 16) & 0xff;
     const g = (color >> 8) & 0xff;
     const b = color & 0xff;
@@ -230,9 +236,10 @@ function createGridPlaneTexture(color: number): THREE.CanvasTexture {
 function createPlaneThroughPoints(
     p1: THREE.Vector3,
     p2: THREE.Vector3,
-    color: number,
+    colorKey: "red" | "green" | "blue",
     size = 2.5,
 ): THREE.Mesh {
+    const color = palette()[colorKey];
     const geometry = new THREE.PlaneGeometry(size, size);
     const material = new THREE.MeshBasicMaterial({
         map: createGridPlaneTexture(color),
@@ -241,7 +248,7 @@ function createPlaneThroughPoints(
         side: THREE.DoubleSide,
         depthWrite: false,
     });
-		const delta = 0.0001;
+    const delta = 0.0001;
     const plane = new THREE.Mesh(geometry, material);
     plane.visible = false;
     plane.renderOrder = 1;
@@ -263,15 +270,17 @@ function createPlaneThroughPoints(
         new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.8 }),
     );
     plane.add(border);
+    plane.userData.colorKey = colorKey;
+    plane.userData.border = border;
 
     scene.add(plane);
     return plane;
 }
 
 const planeToggles: Record<string, THREE.Mesh> = {
-    a: createPlaneThroughPoints(A, M, colors.green),
-    b: createPlaneThroughPoints(B, M, colors.blue),
-    c: createPlaneThroughPoints(C, M, colors.red),
+    a: createPlaneThroughPoints(A, M, "green"),
+    b: createPlaneThroughPoints(B, M, "blue"),
+    c: createPlaneThroughPoints(C, M, "red"),
 };
 
 window.addEventListener("keydown", (e) => {
@@ -330,67 +339,87 @@ function createFieldVector(
         .normalize();
 
     return new THREE.ArrowHelper(
-			direction, origin, length, color, 
-			length*0.2, length*0.07
-		);
+        direction,
+        origin,
+        length,
+        color,
+        length * 0.2,
+        length * 0.07,
+    );
 }
 
-const pairs: [THREE.Vector3, THREE.Vector3, number][] = [
-    [A, M, colors.green],
-    [B, M, colors.blue],
-    [C, M, colors.red],
+const pairs: [THREE.Vector3, THREE.Vector3, "red" | "green" | "blue"][] = [
+    [A, M, "green"],
+    [B, M, "blue"],
+    [C, M, "red"],
 ];
 
-const unitVectors: THREE.Vector3[] = [];
+const fieldVisuals = pairs.map(([point, origin, colorKey]) => {
+    const color = palette()[colorKey];
+    const line = createDashedLine(point, origin, color);
+    const arrow = createFieldVector(point, origin, color);
+    scene.add(line);
+    scene.add(arrow);
+    return { line, arrow, colorKey };
+});
 
-for (const [point, origin, color] of pairs) {
-    scene.add(createDashedLine(point, origin, color));
+function applyTheme() {
+    const next = palette();
 
-    const direction = new THREE.Vector3()
-        .subVectors(origin, point)
-        .normalize();
-    unitVectors.push(direction.clone());
+    renderer.setClearColor(next.background);
+    cubeMaterial.color.setHex(next.fg);
+    edgesMaterial.color.setHex(next.edge);
 
-    scene.add(createFieldVector(point, origin, color));
+    for (const grid of grids) {
+        tintGrid(grid, next.grey);
+    }
+
+    setLabelColor(labelX, next.red);
+    setLabelColor(labelY, next.green);
+    setLabelColor(labelZ, next.blue);
+
+    for (const group of labeledPoints) {
+        const color = next[group.userData.colorKey as "red" | "green" | "blue" | "purple"];
+        group.userData.pointMaterial.color.setHex(color);
+        setLabelColor(group.userData.label, color);
+    }
+
+    for (const plane of Object.values(planeToggles)) {
+        const color = next[plane.userData.colorKey as "red" | "green" | "blue"];
+        const material = plane.material as THREE.MeshBasicMaterial;
+        material.map?.dispose();
+        material.map = createGridPlaneTexture(color);
+        material.needsUpdate = true;
+        (plane.userData.border.material as THREE.LineBasicMaterial).color.setHex(color);
+    }
+
+    for (const visual of fieldVisuals) {
+        const color = next[visual.colorKey];
+        (visual.line.material as THREE.LineDashedMaterial).color.setHex(color);
+        visual.arrow.setColor(color);
+    }
 }
 
-// const sumVector = new THREE.Vector3();
-// for (const v of unitVectors) {
-//     sumVector.add(v);
-// }
-//
-// scene.add(
-//     new THREE.ArrowHelper(
-//         sumVector.clone().normalize(),
-//         M,
-//         sumVector.length(),
-//         colors.yellow,
-//     ),
-// );
-
-
+applyTheme();
+window.addEventListener("themechange", applyTheme);
 
 /* ---------------- START ---------------- */
 
 function animate() {
-
     requestAnimationFrame(animate);
 
-		controls.update();
+    controls.update();
 
     renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
-
 }
 
 animate();
 
 window.addEventListener("resize", () => {
-
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 
     renderer.setSize(window.innerWidth, window.innerHeight);
     labelRenderer.setSize(window.innerWidth, window.innerHeight);
-
 });

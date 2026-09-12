@@ -21,6 +21,7 @@ for (const slug of demos) {
 }
 
 cpSync("demos.json", "dist/demos.json");
+cpSync("shared", join("dist", "shared"), { recursive: true });
 
 const landingHtml = readFileSync("index.html", "utf8").replace(
   "__SITE_BASE__",
