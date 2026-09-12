@@ -1,0 +1,12 @@
+[
+  {
+    "slug": "elektricno-polje-kocka",
+    "title": "Electric Field — Cube",
+    "description": "3D visualization of field vectors from cube corners to the opposite vertex, with toggleable coordinate planes."
+  },
+  {
+    "slug": "complex-vector-visualiser",
+    "title": "Complex Vector Visualiser",
+    "description": "Interactive 3D vector visualization on the complex plane."
+  }
+]

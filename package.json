@@ -1,0 +1,13 @@
+{
+  "name": "viz-demos",
+  "private": true,
+  "workspaces": [
+    "elektricno-polje-kocka",
+    "complex-vector-visualiser"
+  ],
+  "scripts": {
+    "dev:elektricno-polje-kocka": "npm run dev -w elektricno-polje-kocka",
+    "dev:complex-vector-visualiser": "npm run dev -w complex-vector-visualiser",
+    "build": "node scripts/build.mjs"
+  }
+}

@@ -1,0 +1,58 @@
+# Physics & Math Demos
+
+Interactive Three.js visualizations, deployed as a monorepo to GitHub Pages.
+
+## Demos
+
+| Demo | Command |
+|------|---------|
+| [Electric Field — Cube](elektricno-polje-kocka/) | `npm run dev:elektricno-polje-kocka` |
+| [Complex Vector Visualiser](complex-vector-visualiser/) | `npm run dev:complex-vector-visualiser` |
+
+## Local development
+
+```bash
+npm install
+npm run dev:elektricno-polje-kocka
+# or
+npm run dev:complex-vector-visualiser
+```
+
+Open the landing page locally with any static file server from the repo root, or open `index.html` directly (links use relative paths).
+
+## Build for GitHub Pages
+
+```bash
+npm run build
+```
+
+Output goes to `dist/`:
+
+```
+dist/
+├── index.html              # landing page
+├── demos.json
+├── elektricno-polje-kocka/
+└── complex-vector-visualiser/
+```
+
+## Deploy to GitHub Pages
+
+1. Create a GitHub repo and push this folder.
+2. In repo **Settings → Pages**, set source to **GitHub Actions**.
+3. Push to `main` — the workflow in `.github/workflows/deploy.yml` builds and deploys automatically.
+
+Your site will be at:
+
+```
+https://<username>.github.io/<repo-name>/
+```
+
+Each demo lives at a subpath, e.g. `https://<username>.github.io/math-visualizer-demos/elektricno-polje-kocka/`.
+
+## Adding a new demo
+
+1. Create a new folder with its own `package.json` and Vite config (`base: process.env.VITE_BASE_PATH ?? "/"`).
+2. Add the folder to `workspaces` in root `package.json`.
+3. Add a `dev:<name>` script in root `package.json`.
+4. Add the slug to `scripts/build.mjs` and an entry in `demos.json`.
