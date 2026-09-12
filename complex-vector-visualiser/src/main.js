@@ -4,12 +4,18 @@ import * as THREE from "three";
 import { GUI } from "lil-gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import {
+    bindViewControls,
+    createDemoTitle,
+    isTypingTarget,
+} from "../../shared/demo-chrome.js";
+import {
     createThemeToggle,
     hexColor,
     palette,
 } from "../../shared/theme.js";
 
 createThemeToggle();
+createDemoTitle("Complex Vector Visualiser");
 
 const scene = new THREE.Scene();
 
@@ -29,6 +35,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
+bindViewControls(camera, controls);
 
 const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(5, 5, 5);
@@ -128,8 +135,6 @@ const params = {
 
     showProjection: false,
     projectionPlane: "xOy",
-
-    cameraPreset: "default",
 };
 
 /* ---------------- COMPLEX PARSER ---------------- */
@@ -374,24 +379,21 @@ function updateProjection(v) {
     pos.needsUpdate = true;
 }
 
-/* ---------------- CAMERA PRESETS ---------------- */
+/* ---------------- CAMERA ---------------- */
 
-function updateCamera() {
-    if (params.cameraPreset === "xOy") {
-        camera.position.set(0, 0, 6);
-        camera.up.set(0, 0, 1);
-    } else if (params.cameraPreset === "yOz") {
-        camera.position.set(6, 0, 0);
-        camera.up.set(0, 0, 1);
-    } else if (params.cameraPreset === "xOz") {
-        camera.position.set(0, 6, 0);
-        camera.up.set(0, 0, 1);
-    } else {
-        camera.position.set(4, 4, 4);
-        camera.up.set(0, 0, 1);
-    }
+function setAxesVisible(visible) {
+    params.showAxes = visible;
+    axes.visible = visible;
+    labelX.visible = visible;
+    labelY.visible = visible;
+    labelZ.visible = visible;
+}
 
-    controls.update();
+function setGridsVisible(visible) {
+    params.showGrid = visible;
+    gridXYBack.visible = visible;
+    gridYZBack.visible = visible;
+    gridXZBack.visible = visible;
 }
 
 function applyTheme() {
@@ -418,27 +420,23 @@ const gui = new GUI();
 gui.add(params, "Ex").onFinishChange(rebuildPath);
 gui.add(params, "Ey").onFinishChange(rebuildPath);
 gui.add(params, "Ez").onFinishChange(rebuildPath);
-
 gui.add(params, "omega", 0, 10).onFinishChange(rebuildPath);
 
-gui.add(params, "showAxes").onChange((v) => {
-    axes.visible = v;
-    labelX.visible = v;
-    labelY.visible = v;
-    labelZ.visible = v;
-});
-
-gui.add(params, "showGrid").onChange((v) => {
-    gridXYBack.visible = v;
-    gridYZBack.visible = v;
-    gridXZBack.visible = v;
-});
+gui.add(params, "showAxes").name("axes").onChange(setAxesVisible);
+const gridController = gui.add(params, "showGrid").name("grid").onChange(setGridsVisible);
 
 gui.add(params, "showPolarPlane").onChange(rebuildPath);
 gui.add(params, "showProjection");
 gui.add(params, "projectionPlane", ["xOy", "xOz", "yOz"]);
-gui.add(params, "cameraPreset", ["default", "xOy", "yOz", "xOz"])
-    .onChange(updateCamera);
+
+window.addEventListener("keydown", (event) => {
+    if (event.repeat || isTypingTarget(event)) return;
+
+    if (event.key.toLowerCase() === "g") {
+        setGridsVisible(!params.showGrid);
+        gridController.updateDisplay();
+    }
+});
 
 /* ---------------- START ---------------- */
 

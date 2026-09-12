@@ -1,8 +1,14 @@
 import "./style.css";
 import "../../shared/theme-toggle.css";
 import * as THREE from "three";
+import { GUI } from "lil-gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { CSS2DRenderer, CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import {
+    bindViewControls,
+    createDemoTitle,
+    isTypingTarget,
+} from "../../shared/demo-chrome.js";
 import {
     createThemeToggle,
     getTheme,
@@ -11,6 +17,7 @@ import {
 } from "../../shared/theme.js";
 
 createThemeToggle();
+createDemoTitle("Electric Field — Cube");
 
 const scene = new THREE.Scene();
 
@@ -30,6 +37,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
+bindViewControls(camera, controls);
 
 const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -283,22 +291,60 @@ const planeToggles: Record<string, THREE.Mesh> = {
     c: createPlaneThroughPoints(C, M, "red"),
 };
 
+const params = {
+    showAxes: true,
+    showGrid: true,
+    planeA: false,
+    planeB: false,
+    planeC: false,
+};
+
+function setAxesVisible(visible: boolean) {
+    params.showAxes = visible;
+    axes.visible = visible;
+    labelX.visible = visible;
+    labelY.visible = visible;
+    labelZ.visible = visible;
+}
+
+function setGridsVisible(visible: boolean) {
+    params.showGrid = visible;
+    for (const grid of grids) {
+        grid.visible = visible;
+    }
+}
+
+function setPlaneVisible(key: "a" | "b" | "c", visible: boolean) {
+    if (key === "a") params.planeA = visible;
+    if (key === "b") params.planeB = visible;
+    if (key === "c") params.planeC = visible;
+    planeToggles[key].visible = visible;
+}
+
+const gui = new GUI();
+gui.add(params, "showAxes").name("axes").onChange(setAxesVisible);
+const gridController = gui.add(params, "showGrid").name("grid").onChange(setGridsVisible);
+const planeAController = gui.add(params, "planeA").name("plane A").onChange((v: boolean) => setPlaneVisible("a", v));
+const planeBController = gui.add(params, "planeB").name("plane B").onChange((v: boolean) => setPlaneVisible("b", v));
+const planeCController = gui.add(params, "planeC").name("plane C").onChange((v: boolean) => setPlaneVisible("c", v));
+
 window.addEventListener("keydown", (e) => {
-    if (e.repeat) return;
+    if (e.repeat || isTypingTarget(e)) return;
 
     const key = e.key.toLowerCase();
 
     if (key === "g") {
-        const visible = !grids[0].visible;
-        for (const grid of grids) {
-            grid.visible = visible;
-        }
+        setGridsVisible(!params.showGrid);
+        gridController.updateDisplay();
         return;
     }
 
-    const plane = planeToggles[key];
-    if (plane) {
-        plane.visible = !plane.visible;
+    if (key === "a" || key === "b" || key === "c") {
+        const visible = !planeToggles[key].visible;
+        setPlaneVisible(key, visible);
+        if (key === "a") planeAController.updateDisplay();
+        if (key === "b") planeBController.updateDisplay();
+        if (key === "c") planeCController.updateDisplay();
     }
 });
 

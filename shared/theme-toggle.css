@@ -17,6 +17,26 @@
   border-color: var(--theme-toggle-accent, #a7c080);
 }
 
+.demo-title {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  z-index: 40;
+  margin: 0;
+  transform: translateX(-50%);
+  padding: 0 7rem;
+  max-width: min(72vw, 42rem);
+  color: var(--theme-toggle-accent, #a7c080);
+  font: 600 1.15rem/1.2 Arial, sans-serif;
+  text-align: center;
+  pointer-events: none;
+  text-shadow: 0 1px 2px var(--theme-toggle-bg, #2c3337);
+}
+
+.theme-toggle:hover {
+  border-color: var(--theme-toggle-accent, #a7c080);
+}
+
 html[data-theme="dark"] {
   --theme-toggle-bg: #2c3337;
   --theme-toggle-fg: #d3c6aa;
