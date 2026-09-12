@@ -4,8 +4,8 @@ import { execSync } from "node:child_process";
 
 const demos = ["elektricno-polje-kocka", "complex-vector-visualiser"];
 
-const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1] ?? "math-visualizer-demos";
-const siteBase = `/${repoName}`;
+const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1] ?? "";
+const siteBase = repoName ? `/${repoName}` : "";
 
 rmSync("dist", { recursive: true, force: true });
 mkdirSync("dist", { recursive: true });
@@ -28,4 +28,4 @@ const landingHtml = readFileSync("index.html", "utf8").replace(
 );
 writeFileSync("dist/index.html", landingHtml);
 
-console.log(`Built site at dist/ for ${siteBase}/`);
+console.log(`Built site at dist/ for ${siteBase || "/"}`);

@@ -11,6 +11,8 @@ Interactive Three.js visualizations, deployed as a monorepo to GitHub Pages.
 
 ## Local development
 
+One demo at a time (hot reload):
+
 ```bash
 npm install
 npm run dev:elektricno-polje-kocka
@@ -18,7 +20,13 @@ npm run dev:elektricno-polje-kocka
 npm run dev:complex-vector-visualiser
 ```
 
-Open the landing page locally with any static file server from the repo root, or open `index.html` directly (links use relative paths).
+Landing page plus both demos (production build):
+
+```bash
+npm run preview
+```
+
+Then open the URL `serve` prints, usually `http://localhost:3000`.
 
 ## Build for GitHub Pages
 

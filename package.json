@@ -8,6 +8,7 @@
   "scripts": {
     "dev:elektricno-polje-kocka": "npm run dev -w elektricno-polje-kocka",
     "dev:complex-vector-visualiser": "npm run dev -w complex-vector-visualiser",
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "preview": "npm run build && npx --yes serve dist"
   }
 }
