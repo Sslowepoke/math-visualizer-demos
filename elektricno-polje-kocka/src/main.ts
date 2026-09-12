@@ -241,6 +241,7 @@ function createPlaneThroughPoints(
         side: THREE.DoubleSide,
         depthWrite: false,
     });
+		const delta = 0.0001;
     const plane = new THREE.Mesh(geometry, material);
     plane.visible = false;
     plane.renderOrder = 1;
@@ -248,12 +249,12 @@ function createPlaneThroughPoints(
     const epsilon = 1e-6;
     if (Math.abs(p1.x - p2.x) < epsilon) {
         plane.rotation.y = Math.PI / 2;
-        plane.position.set(p1.x, a / 2, a / 2);
+        plane.position.set(p1.x + delta, a / 2, a / 2);
     } else if (Math.abs(p1.y - p2.y) < epsilon) {
         plane.rotation.x = Math.PI / 2;
-        plane.position.set(a / 2, p1.y, a / 2);
+        plane.position.set(a / 2, p1.y + delta, a / 2);
     } else if (Math.abs(p1.z - p2.z) < epsilon) {
-        plane.position.set(a / 2, a / 2, p1.z);
+        plane.position.set(a / 2, a / 2, p1.z + delta);
     }
 
     const borderGeometry = new THREE.EdgesGeometry(geometry);
@@ -316,7 +317,7 @@ function createDashedLine(
     return line;
 }
 
-const VECTOR_LENGTH = 0.7;
+const VECTOR_LENGTH = 0.6;
 
 function createFieldVector(
     point: THREE.Vector3,
@@ -328,7 +329,10 @@ function createFieldVector(
         .subVectors(origin, point)
         .normalize();
 
-    return new THREE.ArrowHelper(direction, origin, length, color);
+    return new THREE.ArrowHelper(
+			direction, origin, length, color, 
+			length*0.2, length*0.07
+		);
 }
 
 const pairs: [THREE.Vector3, THREE.Vector3, number][] = [
