@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sferne ljuske</title>
+    <script>
+      (function () {
+        var theme = new URLSearchParams(location.search).get("theme");
+        if (theme !== "light" && theme !== "dark") {
+          try { theme = localStorage.getItem("math-demos-theme"); } catch (e) {}
+        }
+        if (theme !== "light" && theme !== "dark") {
+          theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

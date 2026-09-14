@@ -8,6 +8,7 @@ Interactive Three.js visualizations, deployed as a monorepo to GitHub Pages.
 |------|---------|
 | [Electric Field — Cube](elektricno-polje-kocka/) | `npm run dev:elektricno-polje-kocka` |
 | [Complex Vector Visualiser](complex-vector-visualiser/) | `npm run dev:complex-vector-visualiser` |
+| [Sferne ljuske](sferne-ljuske/) | `npm run dev:sferne-ljuske` |
 
 ## Local development
 

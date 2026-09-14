@@ -8,5 +8,10 @@
     "slug": "complex-vector-visualiser",
     "title": "Complex Vector Visualiser",
     "description": "Interactive 3D vector visualization on the complex plane."
+  },
+  {
+    "slug": "sferne-ljuske",
+    "title": "Sferne ljuske",
+    "description": "Split a unit sphere into a spherical husk of inner radius r and thickness dr, with a clipping plane to look inside."
   }
 ]
