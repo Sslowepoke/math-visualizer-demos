@@ -13,5 +13,10 @@
     "slug": "sferne-ljuske",
     "title": "Sferne ljuske",
     "description": "Split a unit sphere into a spherical husk of inner radius r and thickness dr, with a clipping plane to look inside."
+  },
+  {
+    "slug": "elektrostaticna-traka",
+    "title": "Electrostatic Field — Strip",
+    "description": "3D visualization of a charged strip in the Oxz plane with a highlighted section, point M, connecting lines, and the angles theta_1 and theta_2."
   }
 ]
