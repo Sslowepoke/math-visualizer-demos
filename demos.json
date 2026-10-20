@@ -18,5 +18,10 @@
     "slug": "elektrostaticna-traka",
     "title": "Electrostatic Field — Strip",
     "description": "3D visualization of a charged strip in the Oxz plane with a highlighted section, point M, connecting lines, and the angles theta_1 and theta_2."
+  },
+  {
+    "slug": "exercise-25",
+    "title": "Exercise 25",
+    "description": "Two charged strips: 0 < x < a in the Oxz plane and 0 < y < a in the Oyz plane, with the point M(a, a, 0)."
   }
 ]

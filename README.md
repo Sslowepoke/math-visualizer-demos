@@ -10,6 +10,7 @@ Interactive Three.js visualizations, deployed as a monorepo to GitHub Pages.
 | [Complex Vector Visualiser](complex-vector-visualiser/) | `npm run dev:complex-vector-visualiser` |
 | [Sferne ljuske](sferne-ljuske/) | `npm run dev:sferne-ljuske` |
 | [Electrostatic Field — Strip](elektrostaticna-traka/) | `npm run dev:elektrostaticna-traka` |
+| [Exercise 25](exercise-25/) | `npm run dev:exercise-25` |
 
 ## Local development
 

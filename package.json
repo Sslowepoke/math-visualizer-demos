@@ -5,7 +5,8 @@
     "elektricno-polje-kocka",
     "complex-vector-visualiser",
     "sferne-ljuske",
-    "elektrostaticna-traka"
+    "elektrostaticna-traka",
+    "exercise-25"
   ],
   "scripts": {
     "dev:elektricno-polje-kocka": "npm run dev -w elektricno-polje-kocka",
@@ -13,6 +14,7 @@
     "build": "node scripts/build.mjs",
     "preview": "npm run build && npx --yes serve dist",
     "dev:sferne-ljuske": "npm run dev -w sferne-ljuske",
-    "dev:elektrostaticna-traka": "npm run dev -w elektrostaticna-traka"
+    "dev:elektrostaticna-traka": "npm run dev -w elektrostaticna-traka",
+    "dev:exercise-25": "npm run dev -w exercise-25"
   }
 }
