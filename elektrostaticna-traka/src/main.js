@@ -3,6 +3,11 @@ import "../../shared/theme-toggle.css";
 import * as THREE from "three";
 import { GUI } from "lil-gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
+import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
+import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
+import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import {
     bindViewControls,
     createDemoTitle,
@@ -43,6 +48,27 @@ light.position.set(5, 5, 5);
 scene.add(light);
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
+const lineMats = [];
+
+function makeLineMat(color, linewidth, opacity = 1) {
+    const mat = new LineMaterial({
+        color,
+        linewidth,
+        transparent: opacity < 1,
+        opacity,
+    });
+    lineMats.push(mat);
+    return mat;
+}
+
+function updateLineResolutions() {
+    for (const mat of lineMats) {
+        mat.resolution.set(window.innerWidth, window.innerHeight);
+    }
+}
+
+updateLineResolutions();
+
 function tintGrid(grid, color) {
     const attr = grid.geometry.getAttribute("color");
     if (!attr) return;
@@ -54,16 +80,16 @@ function tintGrid(grid, color) {
     attr.needsUpdate = true;
 }
 
-function makeLabel(text, color, scale = 0.5) {
+function makeLabel(text, color, scale = 0.6) {
     const canvas = document.createElement("canvas");
     canvas.width = 256;
     canvas.height = 256;
 
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = hexColor(color);
-    ctx.font = "60px Arial";
+    ctx.font = "96px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(text, 128, 140);
+    ctx.fillText(text, 128, 150);
 
     const texture = new THREE.CanvasTexture(canvas);
     const sprite = new THREE.Sprite(
@@ -79,9 +105,9 @@ function paintLabel(sprite, text, color) {
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = hexColor(color);
-    ctx.font = "60px Arial";
+    ctx.font = "96px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(text, 128, 140);
+    ctx.fillText(text, 128, 150);
     sprite.material.map.needsUpdate = true;
 }
 
@@ -120,17 +146,18 @@ const grids = [gridXYBack, gridXZBack, gridYZBack];
 
 const STRIP_HALF_X = 5;
 const LINE_HALF_X = 4;
+const D_E_TAIL = 0.8;
 
 const params = {
     a: -1,
     b: 2,
-    z1: 0.2,
-    z2: 1.2,
+    z: 0.825,
+    dz: 0.15,
     m: 2.5,
-    lineSamplesX: 5,
-    lineSamplesZ: 6,
+    lineSamplesX: 1,
+    lineSamplesZ: 4,
     showAxes: true,
-    showGrid: true,
+    showGrid: false,
     showSectionLines: true,
 };
 
@@ -153,24 +180,16 @@ const highlightMaterial = new THREE.MeshBasicMaterial({
     depthWrite: false,
 });
 
-const stripEdgeMaterial = new THREE.LineBasicMaterial({ color: colors.blue });
-const highlightEdgeMaterial = new THREE.LineBasicMaterial({
-    color: colors.yellow,
-});
-const lineToMMaterial = new THREE.LineBasicMaterial({
-    color: colors.yellow,
-    transparent: true,
-    opacity: 0.55,
-});
-const edgeToMMaterial = new THREE.LineBasicMaterial({ color: colors.purple });
-const radialMaterial = new THREE.LineBasicMaterial({
-    color: colors.grey,
-    transparent: true,
-    opacity: 0.7,
-});
-const arcMaterial1 = new THREE.LineBasicMaterial({ color: colors.red });
-const arcMaterial2 = new THREE.LineBasicMaterial({ color: colors.green });
+const stripEdgeMat = makeLineMat(colors.blue, 2);
+const highlightEdgeMat = makeLineMat(colors.yellow, 2);
+const lineToMMat = makeLineMat(colors.yellow, 2, 0.6);
+const edgeToMMat = makeLineMat(colors.purple, 3);
+const radialMat = makeLineMat(colors.grey, 2.5, 0.7);
+const arcMat1 = makeLineMat(colors.red, 3);
+const arcMat2 = makeLineMat(colors.green, 3);
+const dEMat = makeLineMat(colors.fg, 3.5);
 const pointMaterial = new THREE.MeshBasicMaterial({ color: colors.fg });
+const arrowHeadMaterial = new THREE.MeshBasicMaterial({ color: colors.fg });
 
 const pointM = new THREE.Mesh(
     new THREE.SphereGeometry(0.06, 24, 24),
@@ -181,28 +200,37 @@ scene.add(pointM);
 const labelM = makeLabel("M", colors.fg);
 scene.add(labelM);
 
-const labelA = makeLabel("a", colors.blue, 0.4);
+const labelA = makeLabel("a", colors.blue, 0.5);
 scene.add(labelA);
 
-const labelB = makeLabel("b", colors.blue, 0.4);
+const labelB = makeLabel("b", colors.blue, 0.5);
 scene.add(labelB);
 
-const labelZ1 = makeLabel("z₁", colors.yellow, 0.4);
-scene.add(labelZ1);
+const labelSectionZ = makeLabel("z", colors.yellow, 0.5);
+scene.add(labelSectionZ);
 
-const labelZ2 = makeLabel("z₂", colors.yellow, 0.4);
-scene.add(labelZ2);
-
-const labelTheta1 = makeLabel("θ₁", colors.red, 0.45);
+const labelTheta1 = makeLabel("θ₁", colors.red, 0.55);
 scene.add(labelTheta1);
 
-const labelTheta2 = makeLabel("θ₂", colors.green, 0.45);
+const labelTheta2 = makeLabel("θ₂", colors.green, 0.55);
 scene.add(labelTheta2);
+
+const labelDE = makeLabel("dE", colors.fg, 0.55);
+scene.add(labelDE);
+
+const dEGroup = new THREE.Group();
+scene.add(dEGroup);
 
 function planeMesh(width, depth, material) {
     const geometry = new THREE.PlaneGeometry(width, depth);
     geometry.rotateX(Math.PI / 2);
     return new THREE.Mesh(geometry, material);
+}
+
+function thickLine(points, material) {
+    const geometry = new LineGeometry();
+    geometry.setPositions(points.flatMap((p) => [p.x, p.y, p.z]));
+    return new Line2(geometry, material);
 }
 
 function edgeLoop(width, depth, material, lift) {
@@ -215,17 +243,7 @@ function edgeLoop(width, depth, material, lift) {
         new THREE.Vector3(-halfW, lift, halfD),
         new THREE.Vector3(-halfW, lift, -halfD),
     ];
-    return new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(points),
-        material,
-    );
-}
-
-function lineBetween(p, q, material) {
-    return new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints([p, q]),
-        material,
-    );
+    return thickLine(points, material);
 }
 
 function arcLine(center, radius, alphaStart, alphaEnd, material) {
@@ -241,10 +259,30 @@ function arcLine(center, radius, alphaStart, alphaEnd, material) {
             ),
         );
     }
-    return new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(points),
-        material,
+    return thickLine(points, material);
+}
+
+function buildDE(P, M) {
+    dEGroup.clear();
+
+    const dir = new THREE.Vector3().subVectors(M, P).normalize();
+    const beyond = new THREE.Vector3()
+        .copy(M)
+        .addScaledVector(dir, D_E_TAIL);
+    dEGroup.add(thickLine([P, M, beyond], dEMat));
+
+    const headLength = 0.22;
+    const headRadius = 0.09;
+    const head = new THREE.Mesh(
+        new THREE.ConeGeometry(headRadius, headLength, 24),
+        arrowHeadMaterial,
     );
+    head.position.copy(beyond).addScaledVector(dir, headLength / 2);
+    head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    dEGroup.add(head);
+
+    labelDE.position.copy(beyond).addScaledVector(dir, 0.4);
+    labelDE.position.y += 0.15;
 }
 
 function buildStrip() {
@@ -252,8 +290,9 @@ function buildStrip() {
 
     const a = Math.min(params.a, params.b);
     const b = Math.max(params.a, params.b);
-    let z1 = Math.min(params.z1, params.z2);
-    let z2 = Math.max(params.z1, params.z2);
+    const sectionZ = Math.max(a, Math.min(b, params.z));
+    let z1 = sectionZ - params.dz / 2;
+    let z2 = sectionZ + params.dz / 2;
     z1 = Math.max(a, Math.min(b, z1));
     z2 = Math.max(a, Math.min(b, z2));
     const m = params.m;
@@ -263,7 +302,7 @@ function buildStrip() {
     strip.position.set(0, 0, (a + b) / 2);
     stripGroup.add(strip);
 
-    const stripEdge = edgeLoop(2 * STRIP_HALF_X, stripDepth, stripEdgeMaterial, 0.002);
+    const stripEdge = edgeLoop(2 * STRIP_HALF_X, stripDepth, stripEdgeMat, 0.002);
     stripEdge.position.set(0, 0, (a + b) / 2);
     stripGroup.add(stripEdge);
 
@@ -275,7 +314,7 @@ function buildStrip() {
     const highlightEdge = edgeLoop(
         2 * STRIP_HALF_X,
         sectionDepth,
-        highlightEdgeMaterial,
+        highlightEdgeMat,
         0.003,
     );
     highlightEdge.position.set(0, 0, (z1 + z2) / 2);
@@ -285,17 +324,17 @@ function buildStrip() {
     const A = new THREE.Vector3(0, 0, a);
     const B = new THREE.Vector3(0, 0, b);
     const O = new THREE.Vector3(0, 0, 0);
+    const P = new THREE.Vector3(0, 0, sectionZ);
 
     pointM.position.copy(M);
-    labelM.position.set(0, m + 0.25, 0);
-    labelA.position.set(0.25, -0.25, a);
-    labelB.position.set(0.25, -0.25, b);
-    labelZ1.position.set(0.25, -0.25, z1);
-    labelZ2.position.set(0.25, -0.25, z2);
+    labelM.position.set(0, m + 0.3, 0);
+    labelA.position.set(0.3, -0.3, a);
+    labelB.position.set(0.3, -0.3, b);
+    labelSectionZ.position.set(0.3, -0.3, sectionZ);
 
-    stripGroup.add(lineBetween(A, M, edgeToMMaterial));
-    stripGroup.add(lineBetween(B, M, edgeToMMaterial));
-    stripGroup.add(lineBetween(O, M, radialMaterial));
+    stripGroup.add(thickLine([A, M], edgeToMMat));
+    stripGroup.add(thickLine([B, M], edgeToMMat));
+    stripGroup.add(thickLine([O, M], radialMat));
 
     if (params.showSectionLines && sectionDepth > 1e-6) {
         const positions = [];
@@ -310,40 +349,37 @@ function buildStrip() {
                 positions.push(x, 0, z, M.x, M.y, M.z);
             }
         }
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute(
-            "position",
-            new THREE.Float32BufferAttribute(positions, 3),
-        );
-        stripGroup.add(new THREE.LineSegments(geometry, lineToMMaterial));
+        const geometry = new LineSegmentsGeometry();
+        geometry.setPositions(positions);
+        stripGroup.add(new LineSegments2(geometry, lineToMMat));
     }
 
-    const alphaO = Math.atan2(0, -m);
-    const alphaA = Math.atan2(a, -m);
-    const alphaB = Math.atan2(b, -m);
+    const betaA = Math.atan2(a, m);
+    const betaB = Math.atan2(b, m);
 
     const arcRadius = 0.45 * Math.min(1, m);
-    stripGroup.add(arcLine(M, arcRadius, alphaA, alphaO, arcMaterial1));
-    stripGroup.add(arcLine(M, arcRadius, alphaO, alphaB, arcMaterial2));
+    stripGroup.add(arcLine(M, arcRadius, Math.PI, Math.PI - betaA, arcMat1));
+    stripGroup.add(arcLine(M, arcRadius, Math.PI, Math.PI - betaB, arcMat2));
 
-    const mid1 = (alphaA + alphaO) / 2;
-    const mid2 = (alphaO + alphaB) / 2;
-    const labelOffset = arcRadius + 0.22;
+    const mid1 = betaA / 2;
+    const mid2 = betaB / 2;
+    const labelOffset = arcRadius + 0.25;
     labelTheta1.position.set(
         0,
-        M.y + labelOffset * Math.cos(mid1),
+        M.y - labelOffset * Math.cos(mid1),
         M.z + labelOffset * Math.sin(mid1),
     );
     labelTheta2.position.set(
         0,
-        M.y + labelOffset * Math.cos(mid2),
+        M.y - labelOffset * Math.cos(mid2),
         M.z + labelOffset * Math.sin(mid2),
     );
 
-    const theta1 = Math.abs(alphaO - alphaA);
-    const theta2 = Math.abs(alphaB - alphaO);
-    readout.theta1 = `${((theta1 * 180) / Math.PI).toFixed(1)}°`;
-    readout.theta2 = `${((theta2 * 180) / Math.PI).toFixed(1)}°`;
+    const toDeg = (rad) => `${((rad * 180) / Math.PI).toFixed(1)}°`;
+    readout.theta1 = toDeg(betaA);
+    readout.theta2 = toDeg(betaB);
+
+    buildDE(P, M);
 }
 
 function setAxesVisible(visible) {
@@ -370,23 +406,25 @@ function applyTheme() {
     paintLabel(labelM, "M", next.fg);
     paintLabel(labelA, "a", next.blue);
     paintLabel(labelB, "b", next.blue);
-    paintLabel(labelZ1, "z₁", next.yellow);
-    paintLabel(labelZ2, "z₂", next.yellow);
+    paintLabel(labelSectionZ, "z", next.yellow);
     paintLabel(labelTheta1, "θ₁", next.red);
     paintLabel(labelTheta2, "θ₂", next.green);
+    paintLabel(labelDE, "dE", next.fg);
     for (const grid of grids) {
         tintGrid(grid, next.grey);
     }
     stripMaterial.color.setHex(next.blue);
-    stripEdgeMaterial.color.setHex(next.blue);
+    stripEdgeMat.color.setHex(next.blue);
     highlightMaterial.color.setHex(next.yellow);
-    highlightEdgeMaterial.color.setHex(next.yellow);
-    lineToMMaterial.color.setHex(next.yellow);
-    edgeToMMaterial.color.setHex(next.purple);
-    radialMaterial.color.setHex(next.grey);
-    arcMaterial1.color.setHex(next.red);
-    arcMaterial2.color.setHex(next.green);
+    highlightEdgeMat.color.setHex(next.yellow);
+    lineToMMat.color.setHex(next.yellow);
+    edgeToMMat.color.setHex(next.purple);
+    radialMat.color.setHex(next.grey);
+    arcMat1.color.setHex(next.red);
+    arcMat2.color.setHex(next.green);
+    dEMat.color.setHex(next.fg);
     pointMaterial.color.setHex(next.fg);
+    arrowHeadMaterial.color.setHex(next.fg);
     buildStrip();
 }
 
@@ -397,8 +435,8 @@ const stripFolder = gui.addFolder("strip");
 stripFolder.add(params, "a", -3, 3, 0.1).onChange(buildStrip);
 stripFolder.add(params, "b", -3, 3, 0.1).onChange(buildStrip);
 const sectionFolder = gui.addFolder("section");
-sectionFolder.add(params, "z1", -3, 3, 0.05).onChange(buildStrip);
-sectionFolder.add(params, "z2", -3, 3, 0.05).onChange(buildStrip);
+sectionFolder.add(params, "z", -3, 3, 0.05).onChange(buildStrip);
+sectionFolder.add(params, "dz", 0.01, 1, 0.01).onChange(buildStrip);
 sectionFolder.add(params, "m", 0.5, 6, 0.1).onChange(buildStrip);
 sectionFolder.add(params, "lineSamplesX", 1, 9, 1).onChange(buildStrip);
 sectionFolder.add(params, "lineSamplesZ", 1, 12, 1).onChange(buildStrip);
@@ -408,6 +446,8 @@ anglesFolder.add(readout, "theta1").name("θ₁").listen().disable();
 anglesFolder.add(readout, "theta2").name("θ₂").listen().disable();
 gui.add(params, "showAxes").name("axes").onChange(setAxesVisible);
 const gridController = gui.add(params, "showGrid").name("grid").onChange(setGridsVisible);
+
+setGridsVisible(params.showGrid);
 
 window.addEventListener("keydown", (event) => {
     if (event.repeat || isTypingTarget(event)) return;
@@ -432,4 +472,5 @@ window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    updateLineResolutions();
 });
